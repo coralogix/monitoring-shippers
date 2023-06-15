@@ -1,0 +1,30 @@
+name: checks
+on:
+  pull_request:
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    name: Check Documentation formatting and links
+    steps:
+      - uses: actions/checkout@v3
+      - name: Import environment variables from file
+        run: cat ".github/env" >> $GITHUB_ENV
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "${{ env.golang-version }}"
+      - uses: actions/cache@v3
+        with:
+          path: .mdoxcache
+          key: mdoxcache
+      - run: make check-docs
+  check-changelog-updates:
+    if: github.event.label.name != 'skip changelog'
+    runs-on: ubuntu-latest
+    name: Check changelog update
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Logs Changelog
+        run: scripts/changelog_check.sh .

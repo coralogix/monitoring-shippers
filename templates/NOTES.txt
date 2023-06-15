@@ -1,0 +1,3 @@
+{{- if eq .Values.global.domain "" }}
+{{ fail "[ERROR] 'global.domain' must be set. See https://coralogix.com/docs/coralogix-endpoints for instructions." }}
+{{ end }}
