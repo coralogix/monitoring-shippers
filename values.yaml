@@ -1,0 +1,181 @@
+global:
+  domain: ""
+  defaultApplicationName: "otel"
+  defaultSubsystemName: "infrastructure"
+  logLevel: "warn"
+
+opentelemetry-collector-agent:
+  enabled: true
+  mode: daemonset
+  fullnameOverride: coralogix-opentelemetry
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-opentelemetry-key
+          key: PRIVATE_KEY
+
+  presets:
+    # Configures the Kubernetes Processor to add Kubernetes metadata.
+    # Adds the k8sattributes processor to all the pipelines
+    # and adds the necessary rules to ClusteRole.
+    # Best used with mode = daemonset.
+    kubernetesAttributes:
+      enabled: true
+
+    # Configures the collector to collect host metrics.
+    # Adds the hostmetrics receiver to the metrics pipeline
+    # and adds the necessary volumes and volume mounts.
+    # Best used with mode = daemonset.
+    hostMetrics:
+      enabled: true
+
+    # Configures the collector to collect Kubelet metrics.
+    # Adds the kubeletstats receiver to the metrics pipeline
+    # and adds the necessary rules to ClusteRole.
+    # Best used with mode = daemonset.
+    kubeletMetrics:
+      enabled: true
+
+  config:
+    processors:
+      resourcedetection/env:
+        detectors: ["system", "env"]
+        timeout: 2s
+        override: false
+      filter/metrics:
+        metrics:
+          include:
+            match_type: strict
+            metric_names:
+              - k8s.pod.cpu.time
+              - k8s.node.cpu.utilization
+              - k8s.pod.cpu.utilization
+              - k8s.pod.network.io
+              - k8s.pod.memory.usage
+              - system.cpu.time
+              - system.disk.io
+              - system.network.packets
+              - system.disk.operations
+              - system.memory.usage
+              - system.network.io
+              - container.cpu.utilization
+              - container.cpu.time
+
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{ .Values.global.domain }}"
+        application_name: "{{ .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
+        application_name_attributes:
+          - "k8s.namespace.name"
+          - "service.namespace"
+        subsystem_name_attributes:
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
+
+    service:
+      telemetry:
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+          encoding: json
+      pipelines:
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - filter/metrics
+            - k8sattributes
+            - resourcedetection/env
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - prometheus
+            - hostmetrics
+
+opentelemetry-collector-events:
+  enabled: true
+  mode: deployment
+  fullnameOverride: coralogix-opentelemetry-events
+
+  extraEnvs:
+    - name: CORALOGIX_PRIVATE_KEY
+      valueFrom:
+        secretKeyRef:
+          name: coralogix-opentelemetry-key
+          key: PRIVATE_KEY
+
+  clusterRole:
+    create: true
+    rules:
+      - apiGroups: ["", "events.k8s.io"]
+        resources: ["events"]
+        verbs: ["watch", "list"]
+
+  config:
+    receivers:
+      k8sobjects:
+        objects:
+          - group: events.k8s.io
+            mode: watch
+            name: events
+
+    processors:
+      transform/kube-events:
+        log_statements:
+          - context: log
+            statements:
+              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
+
+      resource/kube-events:
+        attributes:
+          - key: service.name
+            value: "kube-events"
+            action: upsert
+
+    exporters:
+      coralogix:
+        timeout: "30s"
+        private_key: "${CORALOGIX_PRIVATE_KEY}"
+        domain: "{{ .Values.global.domain }}"
+        application_name: "{{ .Values.global.defaultApplicationName }}"
+        subsystem_name: "{{ .Values.global.defaultSubsystemName }}"
+        application_name_attributes:
+          - "k8s.namespace.name"
+          - "service.namespace"
+        subsystem_name_attributes:
+          - "k8s.deployment.name"
+          - "k8s.statefulset.name"
+          - "k8s.daemonset.name"
+          - "k8s.cronjob.name"
+          - "k8s.job.name"
+          - "k8s.container.name"
+          - "k8s.node.name"
+          - "service.name"
+
+    service:
+      telemetry:
+        logs:
+          level: "{{ .Values.global.logLevel }}"
+          encoding: json
+
+      pipelines:
+        logs/kube-events:
+          exporters:
+            - coralogix
+          processors:
+            - memory_limiter
+            - batch
+            - transform/kube-events
+            - resource/kube-events
+          receivers:
+            - k8sobjects
