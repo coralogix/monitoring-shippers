@@ -19,7 +19,7 @@ jobs:
           key: mdoxcache
       - run: make check-docs
   check-changelog-updates:
-    if: github.event.label.name != 'skip changelog'
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip changelog') }}
     runs-on: ubuntu-latest
     name: Check changelog update
     steps:

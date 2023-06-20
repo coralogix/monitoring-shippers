@@ -2,9 +2,11 @@ name: coralogix-opentelemetry-integration
 
 on:
   push:
-    branches: main
+    branches:
+      - main
     paths:
-      - "*"
+      - "./Chart.yaml"
+      - "./values.yaml"
 
 env:
   CHART_VERSION: $(yq eval '.version' Chart.yaml)
