@@ -2,6 +2,8 @@
 
 This repository contains the minimal OpenTelemetry barebones to have [Coralogix Kubernetes Monitoring](https://coralogix.com/docs/apm-kubernetes/) working out-of-the-box, ensuring only the required metrics are collected and shipped to the Coralogix Account.
 
+![Kubernetes Dashboard](assets/kubernetes-dashboard.png)
+
 ## Coralogix's Domain
 
 You have to choose the best Coralogix Endpoint based on your region and provide the required information on the values file under the path `global.domain`, you can find the list of all available domains by clicking [here](https://coralogix.com/docs/coralogix-endpoints/).

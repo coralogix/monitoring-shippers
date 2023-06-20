@@ -5,3 +5,5 @@ validators:
   # Ignore links that includes 'charts' because the generated content will resolve them correctly.
   - regex: ".+/charts/.+"
     type: ignore
+  - regex: ".+/assets/.+"
+    type: ignore

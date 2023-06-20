@@ -1,5 +1,6 @@
 global:
   domain: ""
+  clusterName: ""
   defaultApplicationName: "otel"
   defaultSubsystemName: "infrastructure"
   logLevel: "warn"
@@ -43,6 +44,15 @@ opentelemetry-collector-agent:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
+      metricstransform:
+        transforms:
+          include: .*
+          match_type: regexp
+          action: update
+          operations:
+            - action: add_label
+              new_label: k8s.cluster.name
+              new_value: "{{ .Values.global.clusterName }}"
       filter/metrics:
         metrics:
           include:
@@ -95,6 +105,7 @@ opentelemetry-collector-agent:
             - filter/metrics
             - k8sattributes
             - resourcedetection/env
+            - metricstransform
             - memory_limiter
             - batch
           receivers:
@@ -130,16 +141,13 @@ opentelemetry-collector-events:
             name: events
 
     processors:
-      transform/kube-events:
-        log_statements:
-          - context: log
-            statements:
-              - keep_keys(body, ["type", "action", "eventTime", "reason", "regarding", "reportingController", "note", "series", "metadata", "deprecatedFirstTimestamp", "deprecatedLastTimestamp"])
-
       resource/kube-events:
         attributes:
           - key: service.name
             value: "kube-events"
+            action: upsert
+          - key: k8s.cluster.name
+            value: "{{ .Values.global.clusterName }}"
             action: upsert
 
     exporters:
@@ -175,7 +183,6 @@ opentelemetry-collector-events:
           processors:
             - memory_limiter
             - batch
-            - transform/kube-events
             - resource/kube-events
           receivers:
             - k8sobjects
