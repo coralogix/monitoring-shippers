@@ -22,7 +22,6 @@ jobs:
         uses: actions/checkout@v2.4.0
       - name: Setup Helm Repo
         run: |
-          helm repo add coralogix-charts-virtual ${{ env.ARTIFACTORY_URL }}coralogix-charts-virtual --username ${{ env.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }}
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
           helm dependency build .
