@@ -6,12 +6,10 @@ on:
     branches:
       - main
     paths:
-      - Chart.yaml
-      - Chart.yaml
-      - values.yaml
+      - charts/**
 
 env:
-  CHART_VERSION: $(yq eval '.version' Chart.yaml)
+  CHART_VERSION: $(yq eval '.version' charts/Chart.yaml)
   CHART_NAME: coralogix-opentelemetry-integration
   ARTIFACTORY_URL: https://cgx.jfrog.io/artifactory/
   ARTIFACTORY_USERNAME: integrations-actions
@@ -24,6 +22,7 @@ jobs:
         uses: actions/checkout@v2.4.0
       - name: Setup Helm Repo
         run: |
+          cd charts
           helm repo add opentelemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
           helm dependency build .
@@ -34,4 +33,5 @@ jobs:
           version: 2.12.1
       - name: use-jfrog-cli
         run: |
+          cd charts
           jfrog rt upload --access-token ${{ secrets.ARTIFACTORY_NONUSER_ACCESS_TOKEN }} "${{ env.CHART_NAME }}-*.tgz" coralogix-charts --url ${{ env.ARTIFACTORY_URL }}

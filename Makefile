@@ -24,7 +24,7 @@ fmt-docs: $(MDOX_BINARY)
 
 .PHONY: install
 install:
-	@helm upgrade -i coralogix-opentelemetry-agent .
+	@helm upgrade -i coralogix-opentelemetry-agent charts
 
 .PHONY: start-kind
 start-kind:
