@@ -59,6 +59,22 @@ opentelemetry-collector-agent:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: false
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
       metricstransform:
         transforms:
           include: .*
@@ -73,6 +89,8 @@ opentelemetry-collector-agent:
           include:
             match_type: strict
             metric_names:
+              - cloud.region
+              - cloud.availability_zone
               - k8s.pod.cpu.time
               - k8s.node.cpu.utilization
               - k8s.pod.cpu.utilization
@@ -127,6 +145,7 @@ opentelemetry-collector-agent:
             - filter/metrics
             - k8sattributes
             - resourcedetection/env
+            - resourcedetection/region
             - metricstransform
             - memory_limiter
             - batch
