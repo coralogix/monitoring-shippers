@@ -19,6 +19,10 @@ dependencies:
     version: "0.60.0"
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
     condition: opentelemetry-collector-events.enabled
+  - name: kube-state-metrics
+    version: "5.8.1"
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: kube-state-metrics.enabled
 sources:
   - https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-collector
 maintainers:
