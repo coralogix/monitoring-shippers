@@ -39,6 +39,21 @@ opentelemetry-collector-agent:
       enabled: true
 
   config:
+    extensions:
+      k8s_observer:
+        auth_type: serviceAccount
+        node: ${env:K8S_NODE_NAME}
+        observe_pods: true
+
+    receivers:
+      receiver_creator/ksm_prometheus:
+        watch_observers: [k8s_observer]
+        receivers:
+          prometheus_simple:
+            rule: type == "port" && port == 8080 && pod.name contains "kube-state-metrics" 
+            config:
+              endpoint: '`endpoint`'
+
     processors:
       resourcedetection/env:
         detectors: ["system", "env"]
@@ -71,6 +86,9 @@ opentelemetry-collector-agent:
               - system.network.io
               - container.cpu.utilization
               - container.cpu.time
+              - kube_node_info
+              - kube_pod_status_reason
+              - kube_pod_status_qos_class
 
     exporters:
       coralogix:
@@ -97,6 +115,10 @@ opentelemetry-collector-agent:
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
+      extensions:
+      - k8s_observer
+      - health_check
+      - memory_ballast
       pipelines:
         metrics:
           exporters:
@@ -112,6 +134,7 @@ opentelemetry-collector-agent:
             - otlp
             - prometheus
             - hostmetrics
+            - receiver_creator/ksm_prometheus
 
 opentelemetry-collector-events:
   enabled: true
@@ -186,3 +209,7 @@ opentelemetry-collector-events:
             - resource/kube-events
           receivers:
             - k8sobjects
+
+kube-state-metrics:
+  enabled: true
+  prometheusScrape: false
