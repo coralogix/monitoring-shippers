@@ -1,7 +1,7 @@
 apiVersion: v2
 name: coralogix-opentelemetry-integration
 description: OpenTelemetry barebones to have Coralogix Kubernetes Monitoring working out-of-the-box.
-version: 0.2.0
+version: 0.3.0
 kubeVersion: ">=1.16.0-0"
 keywords:
   - OpenTelemetry Collector
@@ -11,12 +11,12 @@ keywords:
 dependencies:
   - name: opentelemetry-collector
     alias: opentelemetry-collector-agent
-    version: "0.60.0"
+    version: "0.62.2"
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
     condition: opentelemetry-collector-agent.enabled
   - name: opentelemetry-collector
     alias: opentelemetry-collector-events
-    version: "0.60.0"
+    version: "0.62.2"
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
     condition: opentelemetry-collector-events.enabled
   - name: kube-state-metrics
