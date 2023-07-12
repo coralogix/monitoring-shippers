@@ -53,6 +53,52 @@ opentelemetry-collector-agent:
             rule: type == "port" && port == 8080 && pod.name contains "kube-state-metrics" 
             config:
               endpoint: '`endpoint`'
+      prometheus/kubelet_extra_metrics:
+        config:
+          scrape_configs:
+          - job_name: kubernetes-cadvisor
+            honor_timestamps: true
+            scrape_interval: 15s
+            scrape_timeout: 10s
+            metrics_path: /metrics/cadvisor
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: node
+            relabel_configs:
+              - action: labelmap
+                regex: __meta_kubernetes_node_label_(.+)
+              - target_label: __address__
+                replacement: kubernetes.default.svc.cluster.local:443
+              - source_labels: [__meta_kubernetes_node_name]
+                regex: (.+)
+                target_label: __metrics_path__
+                replacement: /api/v1/nodes/$$1/proxy/metrics/cadvisor
+          - job_name: kubernetes-kubelet
+            honor_timestamps: true
+            scrape_interval: 15s
+            scrape_timeout: 10s
+            metrics_path: /metrics
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: node
+            relabel_configs:
+            - action: labelmap
+              regex: __meta_kubernetes_node_label_(.+)
+            - target_label: __address__
+              replacement: kubernetes.default.svc.cluster.local:443
+            - target_label: __metrics_path__
+              source_labels: [__meta_kubernetes_node_name]
+              regex: (.+)
+              replacement: /api/v1/nodes/$$1/proxy/metrics
+
 
     processors:
       resourcedetection/env:
@@ -107,6 +153,11 @@ opentelemetry-collector-agent:
               - kube_node_info
               - kube_pod_status_reason
               - kube_pod_status_qos_class
+              - kubernetes_build_info
+              - container_fs_writes_total
+              - container_fs_writes_bytes_total
+              - container_fs_reads_total
+              - container_fs_reads_bytes_total
 
     exporters:
       coralogix:
@@ -154,6 +205,7 @@ opentelemetry-collector-agent:
             - prometheus
             - hostmetrics
             - receiver_creator/ksm_prometheus
+            - prometheus/kubelet_extra_metrics
 
 opentelemetry-collector-events:
   enabled: true
