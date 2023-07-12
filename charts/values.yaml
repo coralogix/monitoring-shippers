@@ -38,6 +38,25 @@ opentelemetry-collector-agent:
     kubeletMetrics:
       enabled: true
 
+  # Extra role rules are required in order to fetch kubelet and kuberenetes API metrics.
+  clusterRole:
+    rules:
+    - apiGroups:
+        - ""
+      resources:
+        - nodes
+        - nodes/proxy
+        - nodes/metrics
+        - configmaps
+      verbs:
+        - get
+        - list
+        - watch
+    - nonResourceURLs:
+        - "/metrics"
+      verbs:
+        - get
+    
   config:
     extensions:
       k8s_observer:
