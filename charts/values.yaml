@@ -154,8 +154,6 @@ opentelemetry-collector-agent:
           include:
             match_type: strict
             metric_names:
-              - cloud.region
-              - cloud.availability_zone
               - k8s.pod.cpu.time
               - k8s.node.cpu.utilization
               - k8s.pod.cpu.utilization
@@ -303,3 +301,10 @@ opentelemetry-collector-events:
 kube-state-metrics:
   enabled: true
   prometheusScrape: false
+  collectors:
+    - pods
+    - nodes
+  metricsAllowList:
+    - kube_node_info
+    - kube_pod_status_reason
+    - kube_pod_status_qos_class
