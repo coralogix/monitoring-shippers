@@ -38,12 +38,96 @@ opentelemetry-collector-agent:
     kubeletMetrics:
       enabled: true
 
+  # Extra role rules are required in order to fetch kubelet and kuberenetes API metrics.
+  clusterRole:
+    rules:
+    - apiGroups:
+        - ""
+      resources:
+        - nodes
+        - nodes/metrics
+        - endpoints
+        - services
+      verbs:
+        - get
+        - list
+        - watch
+    - nonResourceURLs:
+        - "/metrics"
+      verbs:
+        - get
+    
   config:
+    extensions:
+      k8s_observer:
+        auth_type: serviceAccount
+        node: ${env:K8S_NODE_NAME}
+        observe_pods: true
+
+    receivers:
+      receiver_creator/ksm_prometheus:
+        watch_observers: [k8s_observer]
+        receivers:
+          prometheus_simple:
+            rule: type == "port" && port == 8080 && pod.name contains "kube-state-metrics" 
+            config:
+              endpoint: '`endpoint`'
+      prometheus/kube_extra_metrics:
+        config:
+          scrape_configs:
+          - job_name: kubernetes-apiserver
+            honor_timestamps: true
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+              - source_labels:
+                  [
+                    __meta_kubernetes_namespace,
+                    __meta_kubernetes_service_name,
+                    __meta_kubernetes_endpoint_port_name,
+                  ]
+                action: keep
+                regex: default;kubernetes;https
+          - job_name: kubernetes-cadvisor
+            honor_timestamps: true
+            metrics_path: /metrics/cadvisor
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: node
+            relabel_configs:
+              - action: labelmap
+                regex: __meta_kubernetes_node_label_(.+)
+
     processors:
       resourcedetection/env:
         detectors: ["system", "env"]
         timeout: 2s
         override: false
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: false
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
       metricstransform:
         transforms:
           include: .*
@@ -71,6 +155,14 @@ opentelemetry-collector-agent:
               - system.network.io
               - container.cpu.utilization
               - container.cpu.time
+              - kube_node_info
+              - kube_pod_status_reason
+              - kube_pod_status_qos_class
+              - kubernetes_build_info
+              - container_fs_writes_total
+              - container_fs_writes_bytes_total
+              - container_fs_reads_total
+              - container_fs_reads_bytes_total
 
     exporters:
       coralogix:
@@ -97,6 +189,10 @@ opentelemetry-collector-agent:
         logs:
           level: "{{ .Values.global.logLevel }}"
           encoding: json
+      extensions:
+      - k8s_observer
+      - health_check
+      - memory_ballast
       pipelines:
         metrics:
           exporters:
@@ -105,6 +201,7 @@ opentelemetry-collector-agent:
             - filter/metrics
             - k8sattributes
             - resourcedetection/env
+            - resourcedetection/region
             - metricstransform
             - memory_limiter
             - batch
@@ -112,6 +209,8 @@ opentelemetry-collector-agent:
             - otlp
             - prometheus
             - hostmetrics
+            - receiver_creator/ksm_prometheus
+            - prometheus/kube_extra_metrics
 
 opentelemetry-collector-events:
   enabled: true
@@ -186,3 +285,14 @@ opentelemetry-collector-events:
             - resource/kube-events
           receivers:
             - k8sobjects
+
+kube-state-metrics:
+  enabled: true
+  prometheusScrape: false
+  collectors:
+    - pods
+    - nodes
+  metricsAllowList:
+    - kube_node_info
+    - kube_pod_status_reason
+    - kube_pod_status_qos_class
