@@ -45,9 +45,9 @@ opentelemetry-collector-agent:
         - ""
       resources:
         - nodes
-        - nodes/proxy
         - nodes/metrics
-        - configmaps
+        - endpoints
+        - services
       verbs:
         - get
         - list
@@ -72,13 +72,29 @@ opentelemetry-collector-agent:
             rule: type == "port" && port == 8080 && pod.name contains "kube-state-metrics" 
             config:
               endpoint: '`endpoint`'
-      prometheus/kubelet_extra_metrics:
+      prometheus/kube_extra_metrics:
         config:
           scrape_configs:
+          - job_name: kubernetes-apiserver
+            honor_timestamps: true
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+              - source_labels:
+                  [
+                    __meta_kubernetes_namespace,
+                    __meta_kubernetes_service_name,
+                    __meta_kubernetes_endpoint_port_name,
+                  ]
+                action: keep
+                regex: default;kubernetes;https
           - job_name: kubernetes-cadvisor
             honor_timestamps: true
-            scrape_interval: 15s
-            scrape_timeout: 10s
             metrics_path: /metrics/cadvisor
             scheme: https
             bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -90,34 +106,6 @@ opentelemetry-collector-agent:
             relabel_configs:
               - action: labelmap
                 regex: __meta_kubernetes_node_label_(.+)
-              - target_label: __address__
-                replacement: kubernetes.default.svc.cluster.local:443
-              - source_labels: [__meta_kubernetes_node_name]
-                regex: (.+)
-                target_label: __metrics_path__
-                replacement: /api/v1/nodes/$$1/proxy/metrics/cadvisor
-          - job_name: kubernetes-kubelet
-            honor_timestamps: true
-            scrape_interval: 15s
-            scrape_timeout: 10s
-            metrics_path: /metrics
-            scheme: https
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            tls_config:
-              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              insecure_skip_verify: true
-            kubernetes_sd_configs:
-            - role: node
-            relabel_configs:
-            - action: labelmap
-              regex: __meta_kubernetes_node_label_(.+)
-            - target_label: __address__
-              replacement: kubernetes.default.svc.cluster.local:443
-            - target_label: __metrics_path__
-              source_labels: [__meta_kubernetes_node_name]
-              regex: (.+)
-              replacement: /api/v1/nodes/$$1/proxy/metrics
-
 
     processors:
       resourcedetection/env:
@@ -222,7 +210,7 @@ opentelemetry-collector-agent:
             - prometheus
             - hostmetrics
             - receiver_creator/ksm_prometheus
-            - prometheus/kubelet_extra_metrics
+            - prometheus/kube_extra_metrics
 
 opentelemetry-collector-events:
   enabled: true
