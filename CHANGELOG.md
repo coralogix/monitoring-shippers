@@ -2,6 +2,9 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.4.0 / 2023-07-17
+* [FEATURE] Add additional k8s metrics to filter
+
 ### v0.3.0 / 2023-07-12
 * [FEATURE] Adding extra kubelet and kubernetes API metrics
 * [FEATURE] Adding region detection
