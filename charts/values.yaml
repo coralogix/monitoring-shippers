@@ -137,16 +137,29 @@ opentelemetry-collector-agent:
             - action: add_label
               new_label: k8s.cluster.name
               new_value: "{{ .Values.global.clusterName }}"
+            - action: add_label
+              new_label: cx.otel_integration.name
+              new_value: "{{ .Chart.Name }}"
+            - action: add_label
+              new_label: cx.otel_integration.version
+              new_value: "{{ .Chart.Version }}"
       filter/metrics:
         metrics:
           include:
             match_type: strict
             metric_names:
-              - k8s.pod.cpu.time
               - k8s.node.cpu.utilization
+              - k8s.node.allocatable_memory
+              - k8s.node.allocatable_cpu
+              - k8s.pod.cpu.time
               - k8s.pod.cpu.utilization
               - k8s.pod.network.io
               - k8s.pod.memory.usage
+              - k8s.pod.memory.available
+              - k8s.container.cpu_limit
+              - k8s.container.cpu_request
+              - k8s.container.memory_limit
+              - k8s.container.memory_request
               - system.cpu.time
               - system.disk.io
               - system.network.packets
@@ -157,6 +170,7 @@ opentelemetry-collector-agent:
               - container.cpu.time
               - kube_node_info
               - kube_pod_status_reason
+              - kube_pod_status_phase
               - kube_pod_status_qos_class
               - kubernetes_build_info
               - container_fs_writes_total
@@ -295,4 +309,5 @@ kube-state-metrics:
   metricsAllowList:
     - kube_node_info
     - kube_pod_status_reason
+    - kube_pod_status_phase
     - kube_pod_status_qos_class
