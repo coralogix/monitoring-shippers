@@ -137,6 +137,12 @@ opentelemetry-collector-agent:
             - action: add_label
               new_label: k8s.cluster.name
               new_value: "{{ .Values.global.clusterName }}"
+            - action: add_label
+              new_label: cx.otel_integration.name
+              new_value: "{{ .Chart.Name }}"
+            - action: add_label
+              new_label: cx.otel_integration.version
+              new_value: "{{ .Chart.Version }}"
       filter/metrics:
         metrics:
           include:
