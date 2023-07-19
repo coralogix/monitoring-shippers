@@ -78,3 +78,7 @@ To destroy the local environment, you need to run the following command.
 ```bash
 make destroy
 ```
+
+## Note On Metrics Cardinality
+
+Please be aware that certain metrics collected by this agent have high cardinality, which means that the number of unique values for a given metric is high and might result in higher costs connected with metrics ingestion and storage. This is applies in particular to the pod related metrics `kube_pod_status_reason`, `kube_pod_status_phase` and `kube_pod_status_qos_class`.
