@@ -2,6 +2,9 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.5.0 / 2023-07-26
+* [FEATURE] Add cluster metrics receiver
+
 ### v0.4.0 / 2023-07-17
 * [FEATURE] Add additional k8s metrics to filter
 

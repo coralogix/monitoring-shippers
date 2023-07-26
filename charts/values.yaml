@@ -149,17 +149,11 @@ opentelemetry-collector-agent:
             match_type: strict
             metric_names:
               - k8s.node.cpu.utilization
-              - k8s.node.allocatable_memory
-              - k8s.node.allocatable_cpu
               - k8s.pod.cpu.time
               - k8s.pod.cpu.utilization
               - k8s.pod.network.io
               - k8s.pod.memory.usage
               - k8s.pod.memory.available
-              - k8s.container.cpu_limit
-              - k8s.container.cpu_request
-              - k8s.container.memory_limit
-              - k8s.container.memory_request
               - system.cpu.time
               - system.disk.io
               - system.network.packets
@@ -170,7 +164,6 @@ opentelemetry-collector-agent:
               - container.cpu.time
               - kube_node_info
               - kube_pod_status_reason
-              - kube_pod_status_phase
               - kube_pod_status_qos_class
               - kubernetes_build_info
               - container_fs_writes_total
@@ -212,7 +205,6 @@ opentelemetry-collector-agent:
           exporters:
             - coralogix
           processors:
-            - filter/metrics
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
@@ -230,6 +222,21 @@ opentelemetry-collector-events:
   enabled: true
   mode: deployment
   fullnameOverride: coralogix-opentelemetry-events
+
+  presets:
+    # Configures the Kubernetes Processor to add Kubernetes metadata.
+    # Adds the k8sattributes processor to all the pipelines
+    # and adds the necessary rules to ClusteRole.
+    # Best used with mode = daemonset.
+    kubernetesAttributes:
+      enabled: true
+
+    # Configures the Kubernetes Cluster Receiver to collect cluster-level metrics.
+    # Adds the k8s_cluster receiver to the metrics pipeline
+    # and adds the necessary rules to ClusteRole.
+    # Best used with mode = deployment or statefulset.
+    clusterMetrics:
+      enabled: true
 
   extraEnvs:
     - name: CORALOGIX_PRIVATE_KEY
@@ -262,6 +269,53 @@ opentelemetry-collector-events:
           - key: k8s.cluster.name
             value: "{{ .Values.global.clusterName }}"
             action: upsert
+      resourcedetection/env:
+        detectors: ["system", "env"]
+        timeout: 2s
+        override: false
+      resourcedetection/region:
+        detectors: ["gcp", "ec2"]
+        timeout: 2s
+        override: false
+        gcp:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+        ec2:
+          resource_attributes:
+            cloud.region:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+      metricstransform:
+        transforms:
+          include: .*
+          match_type: regexp
+          action: update
+          operations:
+            - action: add_label
+              new_label: k8s.cluster.name
+              new_value: "{{ .Values.global.clusterName }}"
+            - action: add_label
+              new_label: cx.otel_integration.name
+              new_value: "{{ .Chart.Name }}"
+            - action: add_label
+              new_label: cx.otel_integration.version
+              new_value: "{{ .Chart.Version }}"
+      filter/metrics:
+        metrics:
+          include:
+            match_type: strict
+            metric_names:
+              - k8s.node.allocatable_memory
+              - k8s.node.allocatable_cpu
+              - k8s.pod.phase
+              - k8s.container.cpu_limit
+              - k8s.container.cpu_request
+              - k8s.container.memory_limit
+              - k8s.container.memory_request
 
     exporters:
       coralogix:
@@ -290,6 +344,20 @@ opentelemetry-collector-events:
           encoding: json
 
       pipelines:
+        metrics:
+          exporters:
+            - coralogix
+          processors:
+            - k8sattributes
+            - resourcedetection/env
+            - resourcedetection/region
+            - metricstransform
+            - memory_limiter
+            - batch
+          receivers:
+            - otlp
+            - prometheus
+            - k8s_cluster
         logs/kube-events:
           exporters:
             - coralogix
@@ -309,5 +377,4 @@ kube-state-metrics:
   metricsAllowList:
     - kube_node_info
     - kube_pod_status_reason
-    - kube_pod_status_phase
     - kube_pod_status_qos_class
