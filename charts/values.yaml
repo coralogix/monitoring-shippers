@@ -15,6 +15,8 @@ opentelemetry-collector-agent:
         secretKeyRef:
           name: coralogix-opentelemetry-key
           key: PRIVATE_KEY
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: "k8s.node.name=$(K8S_NODE_NAME)"
 
   presets:
     # Configures the Kubernetes Processor to add Kubernetes metadata.
@@ -115,7 +117,7 @@ opentelemetry-collector-agent:
       resourcedetection/region:
         detectors: ["gcp", "ec2"]
         timeout: 2s
-        override: false
+        override: true
         gcp:
           resource_attributes:
             cloud.region:
@@ -170,6 +172,7 @@ opentelemetry-collector-agent:
               - container_fs_writes_bytes_total
               - container_fs_reads_total
               - container_fs_reads_bytes_total
+              - container_fs_usage_bytes
 
     exporters:
       coralogix:

@@ -2,6 +2,12 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.6.0 / 2023-08-01
+* [FEATURE] Add `container_fs_usage_bytes` metric
+* [FEATURE] Add `k8s.node.name` resource attribute
+* [FEATURE] Override detection for cloud provider detectors
+* [CHORE] Update OpenTelemetry charts to 0.64.0
+
 ### v0.5.0 / 2023-07-26
 * [FEATURE] Add cluster metrics receiver
 
