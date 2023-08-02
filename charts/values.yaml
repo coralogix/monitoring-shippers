@@ -142,9 +142,6 @@ opentelemetry-collector-agent:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
-            - action: add_label
-              new_label: cx.otel_integration.version
-              new_value: "{{ .Chart.Version }}"
       filter/metrics:
         metrics:
           include:
@@ -208,6 +205,7 @@ opentelemetry-collector-agent:
           exporters:
             - coralogix
           processors:
+            - filter/metrics
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
@@ -304,9 +302,6 @@ opentelemetry-collector-events:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
-            - action: add_label
-              new_label: cx.otel_integration.version
-              new_value: "{{ .Chart.Version }}"
       filter/metrics:
         metrics:
           include:
@@ -351,6 +346,7 @@ opentelemetry-collector-events:
           exporters:
             - coralogix
           processors:
+            - filter/metrics
             - k8sattributes
             - resourcedetection/env
             - resourcedetection/region
