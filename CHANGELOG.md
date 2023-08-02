@@ -2,6 +2,10 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.7.0 / 2023-08-02
+* [FIX] Re-add metrics filtering
+* [CHORE] Remove unused `cx.otel_integration.version` attribute
+
 ### v0.6.0 / 2023-08-01
 * [FEATURE] Add `container_fs_usage_bytes` metric
 * [FEATURE] Add `k8s.node.name` resource attribute
