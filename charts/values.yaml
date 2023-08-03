@@ -260,6 +260,9 @@ opentelemetry-collector-events:
           - group: events.k8s.io
             mode: watch
             name: events
+      k8s_cluster:
+        collection_interval: 10s
+        allocatable_types_to_report: [cpu, memory]
 
     processors:
       resource/kube-events:
