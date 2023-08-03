@@ -2,6 +2,9 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.8.0 / 2023-08-03
+* [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
+
 ### v0.7.0 / 2023-08-02
 * [FIX] Re-add metrics filtering
 * [CHORE] Remove unused `cx.otel_integration.version` attribute
