@@ -132,7 +132,7 @@ opentelemetry-collector-agent:
               enabled: true
       metricstransform:
         transforms:
-          include: .*
+        - include: .*
           match_type: regexp
           action: update
           operations:
@@ -142,6 +142,14 @@ opentelemetry-collector-agent:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
+        # Replace node name for kube node info with the name of the target node.
+        - include: kube_node_info
+          match_type: strict
+          action: update
+          operations:
+            - action: update_label
+              label: node
+              new_label: k8s.node.name
       filter/metrics:
         metrics:
           include:
