@@ -1,7 +1,7 @@
 apiVersion: v2
 name: coralogix-opentelemetry-integration
 description: OpenTelemetry barebones to have Coralogix Kubernetes Monitoring working out-of-the-box.
-version: 0.8.0
+version: 0.9.0
 kubeVersion: ">=1.16.0-0"
 keywords:
   - OpenTelemetry Collector

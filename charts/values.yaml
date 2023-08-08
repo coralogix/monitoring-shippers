@@ -39,25 +39,6 @@ opentelemetry-collector-agent:
     # Best used with mode = daemonset.
     kubeletMetrics:
       enabled: true
-
-  # Extra role rules are required in order to fetch kubelet and kuberenetes API metrics.
-  clusterRole:
-    rules:
-    - apiGroups:
-        - ""
-      resources:
-        - nodes
-        - nodes/metrics
-        - endpoints
-        - services
-      verbs:
-        - get
-        - list
-        - watch
-    - nonResourceURLs:
-        - "/metrics"
-      verbs:
-        - get
     
   config:
     extensions:
@@ -71,43 +52,9 @@ opentelemetry-collector-agent:
         watch_observers: [k8s_observer]
         receivers:
           prometheus_simple:
-            rule: type == "port" && port == 8080 && pod.name contains "kube-state-metrics" 
+            rule: type == "port" && port == 8080 && pod.name contains "{{ .Release.Name }}-kube-state-metrics" 
             config:
               endpoint: '`endpoint`'
-      prometheus/kube_extra_metrics:
-        config:
-          scrape_configs:
-          - job_name: kubernetes-apiserver
-            honor_timestamps: true
-            scheme: https
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            tls_config:
-              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              insecure_skip_verify: true
-            kubernetes_sd_configs:
-            - role: endpoints
-            relabel_configs:
-              - source_labels:
-                  [
-                    __meta_kubernetes_namespace,
-                    __meta_kubernetes_service_name,
-                    __meta_kubernetes_endpoint_port_name,
-                  ]
-                action: keep
-                regex: default;kubernetes;https
-          - job_name: kubernetes-cadvisor
-            honor_timestamps: true
-            metrics_path: /metrics/cadvisor
-            scheme: https
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            tls_config:
-              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              insecure_skip_verify: true
-            kubernetes_sd_configs:
-            - role: node
-            relabel_configs:
-              - action: labelmap
-                regex: __meta_kubernetes_node_label_(.+)
 
     processors:
       resourcedetection/env:
@@ -132,7 +79,7 @@ opentelemetry-collector-agent:
               enabled: true
       metricstransform:
         transforms:
-          include: .*
+        - include: .*
           match_type: regexp
           action: update
           operations:
@@ -142,6 +89,14 @@ opentelemetry-collector-agent:
             - action: add_label
               new_label: cx.otel_integration.name
               new_value: "{{ .Chart.Name }}"
+        # Replace node name for kube node info with the name of the target node.
+        - include: kube_node_info
+          match_type: strict
+          action: update
+          operations:
+            - action: update_label
+              label: node
+              new_label: k8s.node.name
       filter/metrics:
         metrics:
           include:
@@ -164,12 +119,6 @@ opentelemetry-collector-agent:
               - kube_node_info
               - kube_pod_status_reason
               - kube_pod_status_qos_class
-              - kubernetes_build_info
-              - container_fs_writes_total
-              - container_fs_writes_bytes_total
-              - container_fs_reads_total
-              - container_fs_reads_bytes_total
-              - container_fs_usage_bytes
 
     exporters:
       coralogix:
@@ -217,7 +166,6 @@ opentelemetry-collector-agent:
             - prometheus
             - hostmetrics
             - receiver_creator/ksm_prometheus
-            - prometheus/kube_extra_metrics
 
 opentelemetry-collector-events:
   enabled: true
@@ -252,9 +200,58 @@ opentelemetry-collector-events:
       - apiGroups: ["", "events.k8s.io"]
         resources: ["events"]
         verbs: ["watch", "list"]
+      - apiGroups:
+          - ""
+        resources:
+          - nodes
+          - nodes/metrics
+          - endpoints
+          - services
+        verbs:
+          - get
+          - list
+          - watch
+      - nonResourceURLs:
+          - "/metrics"
+        verbs:
+          - get
 
   config:
     receivers:
+      prometheus/kube_extra_metrics:
+        config:
+          scrape_configs:
+          - job_name: kubernetes-apiserver
+            honor_timestamps: true
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: endpoints
+            relabel_configs:
+              - source_labels:
+                  [
+                    __meta_kubernetes_namespace,
+                    __meta_kubernetes_service_name,
+                    __meta_kubernetes_endpoint_port_name,
+                  ]
+                action: keep
+                regex: default;kubernetes;https
+          - job_name: kubernetes-cadvisor
+            honor_timestamps: true
+            metrics_path: /metrics/cadvisor
+            scheme: https
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              insecure_skip_verify: true
+            kubernetes_sd_configs:
+            - role: node
+            relabel_configs:
+              - action: labelmap
+                regex: __meta_kubernetes_node_label_(.+)
       k8sobjects:
         objects:
           - group: events.k8s.io
@@ -317,6 +314,12 @@ opentelemetry-collector-events:
               - k8s.container.cpu_request
               - k8s.container.memory_limit
               - k8s.container.memory_request
+              - kubernetes_build_info
+              - container_fs_writes_total
+              - container_fs_writes_bytes_total
+              - container_fs_reads_total
+              - container_fs_reads_bytes_total
+              - container_fs_usage_bytes
 
     exporters:
       coralogix:
@@ -359,6 +362,7 @@ opentelemetry-collector-events:
           receivers:
             - otlp
             - prometheus
+            - prometheus/kube_extra_metrics
             - k8s_cluster
         logs/kube-events:
           exporters:
