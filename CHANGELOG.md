@@ -2,6 +2,11 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.9.0 / 2023-08-08
+* [FIX] Limit kube-state-metrics scraping to chart's instance only
+* [FIX] Move extra Kubernetes metrics to collector instead of agent
+* [FEATURE] Make `k8s.node.name` label the target node for Kubernetes node info metric
+
 ### v0.8.0 / 2023-08-03
 * [FEATURE] Add cluster metrics related to allocatable resources (CPU, memory)
 
