@@ -2,6 +2,9 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.10.0 / 2023-08-11
+* [FEATURE] Align the `cx.otel_integration.name` attribute with new internal requirements
+
 ### v0.9.0 / 2023-08-08
 * [FIX] Limit kube-state-metrics scraping to chart's instance only
 * [FIX] Move extra Kubernetes metrics to collector instead of agent
