@@ -8,6 +8,13 @@ This repository contains the minimal OpenTelemetry barebones to have [Coralogix 
 
 You have to choose the best Coralogix Endpoint based on your region and provide the required information on the values file under the path `global.domain`, you can find the list of all available domains by clicking [here](https://coralogix.com/docs/coralogix-endpoints/).
 
+## Prerequisites
+
+Make sure you have at least these version of the following installed:
+
+- Kubernetes 1.24+
+- Helm 3.9+
+
 ## Kubernetes integrations requirement
 
 This agent requires a `secret` with the relevant `private key` under a secret key called `PRIVATE_KEY` on the same `namespace` the integration is installed in.
