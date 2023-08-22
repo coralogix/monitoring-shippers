@@ -2,6 +2,10 @@
 
 ## Coralogix Opentelemetry Integration
 
+### v0.11.0 / 2023-08-22
+
+* [FEATURE] Support host.id from system resource detector.
+
 ### v0.10.0 / 2023-08-11
 * [FEATURE] Align the `cx.otel_integration.name` attribute with new internal requirements
 
