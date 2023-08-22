@@ -2,8 +2,10 @@
 
 ## Coralogix Opentelemetry Integration
 
-### v0.11.0 / 2023-08-22
+### v0.12.0 / 2023-08-22
+* [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute
 
+### v0.11.0 / 2023-08-22
 * [FEATURE] Support host.id from system resource detector.
 
 ### v0.10.0 / 2023-08-11
