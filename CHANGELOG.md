@@ -5,6 +5,7 @@
 ### v0.12.1 / 2023-09-29
 
 * [FIX] Remove `k8s.pod.name`,`k8s.job.name` and `k8s.node.name` from subsystem attribute list
+* [FIX] Add tolerations
 
 ### v0.12.0 / 2023-08-22
 * [FIX] Change `k8s.container.name` to `k8s.pod.name` attribute

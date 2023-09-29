@@ -9,6 +9,8 @@ opentelemetry-collector-agent:
   enabled: true
   mode: daemonset
   fullnameOverride: coralogix-opentelemetry
+  tolerations: 
+    - operator: Exists
   extraVolumes:
     - name: etcmachineid
       hostPath:
