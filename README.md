@@ -1,5 +1,8 @@
 # Coralogix - Infrastructure Monitoring Integration
 
+> [!IMPORTANT]
+> Monitoring Shipper is deprecated and in maintenance mode. Please use [OpenTelemetry Integration](https://github.com/coralogix/telemetry-shippers/tree/master/otel-integration/k8s-helm) project, which provides full OpenTelemetry observability solution.
+
 This repository contains the minimal OpenTelemetry barebones to have [Coralogix Kubernetes Monitoring](https://coralogix.com/docs/apm-kubernetes/) working out-of-the-box, ensuring only the required metrics are collected and shipped to the Coralogix Account.
 
 ![Kubernetes Dashboard](assets/kubernetes-dashboard.png)
